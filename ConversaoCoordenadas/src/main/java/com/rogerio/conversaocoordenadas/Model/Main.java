@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package com.rogerio.conversaocoordenadas.Model;
 
 /**
@@ -10,11 +5,13 @@ package com.rogerio.conversaocoordenadas.Model;
  * @author Rogerio
  */
 public class Main {
-    
+    /*Parametros do GRS80*/
     private static double a = 6378137; //semi-eixo maior
     private static double f = 1/298.257222101;
-    private static double b = (a - 1) / f; //semi-eixo menor
-    private static double ondulacao_geoidal = -5.03; // Valor de N em metros!Obtido em: https://ww2.ibge.gov.br/mapgeo/mapgeo.htm
+    private static double b = a * (1 - f); //semi-eixo menor
+
+    private static double ondulacao_geoidal = -5.03; // Valor de N em metros!
+    //Obtido em: https://ww2.ibge.gov.br/mapgeo/mapgeo.htm
     
     public static void main (String[] args) {
         System.out.println("Conversão de Coordenadas\n\n");
@@ -25,7 +22,6 @@ public class Main {
     }
     
     public static void convert_LatLong_to_XYZ(double phi, double lamb, double h) {
-        double f_CALC = (a - b) / a; // C0MPARAR
         double e2 = 2 * f - f*f;
         double N = a / (Math.sqrt( 1 - e2 * (Math.sin(phi) * Math.sin(phi)))) ; //Grande Normal
         
@@ -40,29 +36,36 @@ public class Main {
     }
     
     public static void convert_XYZ_to_LatLong(double X, double Y, double Z) {
-        double e2 = 2 * f - f*f;
-        double e_line = e2 / (1 - e2); // Segunda excentricidade       
-            
-        double theta = Math.atan( (Z * a) / (b * Math.sqrt(X*X + Y*Y)));
+//        double f = (a - b) / a;
+        double a = 6378137.00;
+        double f = 1 / 298.257222101;
+//        double b = 6356752.314140347;
+        double b = a * (1-f);
+//        double e2 = (a*a - b*b) / b*b;
+        double e2 = 2*f - f*f;        
+        double e_lin2 = e2 / (1 - e2); // Segunda excentricidade       
         
-        double sin_theta = Math.sin(theta);
-        double cos_theta = Math.cos(theta);
+        double p = Math.sqrt(X*X + Y*Y);
         
-        double phi = Math.atan( (Z + e_line * b * (sin_theta * sin_theta * sin_theta)) / 
-                        Math.sqrt(X*X + Y*Y) * e2 * a * (cos_theta * cos_theta * cos_theta) );
+        double theta = Math.atan( (Z * a) / (p * b) );
+                
+        double phi = Math.atan( (Z + e_lin2 * b * (Math.sin(theta) * Math.sin(theta) * Math.sin(theta)) ) / 
+                                (p - e2 * a * (Math.cos(theta) * Math.cos(theta) * Math.cos(theta)) )
+                     );
+        
         double lamb = Math.atan(Y/X);
         
         double N = a / (Math.sqrt( 1 - e2 * (Math.sin(phi) * Math.sin(phi)))) ; //Grande Normal;
-        double h = (Math.sqrt(X*X + Y*Y)/Math.cos(phi) - N);
+        double h = (Math.sqrt(X*X + Y*Y)/Math.cos(phi)) - N;
         
         double H = calc_Alt_Orto(h);
                 
-        System.out.println("\nPhi   (Latitude) [rad]: " + phi); // Latitude em radianos
-        System.out.println("\nLamb (Longitude) [rad]: " + lamb);// Longitude em radianos
-        System.out.println("\n\nPhi  (Latitude)  [deg]: " + Math.toDegrees(phi)); // Latitude em radianos
-        System.out.println(  "\nLamb (Longitude) [deg]: " + Math.toDegrees(lamb));// Longitude em radianos
-        System.out.println(  "\nAlt Geométrica  (h)[m]: " + h);
-        System.out.println(  "\nAlt Ortométrica (H)[m]: " + H);
+        System.out.println(  "\nPhi   (Latitude) [rad]: "   + phi); // Latitude em radianos
+        System.out.println(  "\nLamb (Longitude) [rad]: "   + lamb);// Longitude em radianos
+        System.out.println("\n\nPhi  (Latitude)  [deg]: " + Math.toDegrees(phi)); // Latitude em graus
+        System.out.println(  "\nLamb (Longitude) [deg]: " + Math.toDegrees(lamb));// Longitude em graus
+        System.out.println(  "\nAlt Geométrica  (h)[m]: " + h); // Altitude Geométrica (GRS80)
+        System.out.println(  "\nAlt Ortométrica (H)[m]: " + H); // Altitude Ortométrica
     }
     
     public static double calc_Alt_Orto(double h) {
